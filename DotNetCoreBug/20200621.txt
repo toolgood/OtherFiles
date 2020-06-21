@@ -1,0 +1,16 @@
+
+In 360 browser, when selecting file upload, dotnet core asp crashed
+
+360 browser download url： http://browser.360.cn/
+
+version:12.2.1228.0
+chrome version:78.0.3904.108
+
+gif demo file: https://github.com/toolgood/OtherFiles/blob/master/DotNetCoreBug/20200621.gif
+
+
+------------------------------------------- ---------------------------
+
+There is no such problem after 360 browser is updated to the last version
+
+
