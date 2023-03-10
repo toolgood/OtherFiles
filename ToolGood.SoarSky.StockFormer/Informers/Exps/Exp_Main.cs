@@ -14,6 +14,7 @@ using static TorchSharp.torch.utils.data;
 using TorchSharp.Modules;
 using static TorchSharp.torch.optim.lr_scheduler;
 using ToolGood.SoarSky.StockFormer.PatchTSTs.Exps;
+using ToolGood.SoarSky.StockFormer.Utils;
 
 namespace ToolGood.SoarSky.StockFormer.Informers.Exps
 {
@@ -214,7 +215,7 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
                         batch_y.shape[^1]
                     }).@float();
             }
-            dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Ellipsis, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Ellipsis], dec_inp }, dim: 1).@float().to(this.device);
+            dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
             // encoder - decoder
             if (this.args.output_attention) {
                 outputs = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
@@ -225,7 +226,7 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
             //    outputs = dataset_object.inverse_transform(outputs);
             //}
             var f_dim = this.args.features == "MS" ? -1 : 0;
-            batch_y = batch_y[TensorIndex.Ellipsis, -this.args.pred_len, f_dim].to(this.device);
+            batch_y = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
             return (outputs, batch_y);
         }
         private (Tensor, Tensor, Tensor, Tensor) GetTensor(Dictionary<string, Tensor> dict)

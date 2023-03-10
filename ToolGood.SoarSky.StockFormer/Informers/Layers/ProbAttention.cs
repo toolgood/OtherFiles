@@ -1,6 +1,6 @@
 ﻿using NumpyDotNet;
 using System.Diagnostics;
-using ToolGood.SoarSky.StockFormer.Informers.Utils;
+using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -35,15 +35,18 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Layers
             // calculate the sampled Q_K
             var K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E);
             var index_sample = torch.randint(L_K, (L_Q, sample_k));
-            var K_sample = K_expand[TensorIndex.Ellipsis, TensorIndex.Ellipsis,
-                TensorIndex.Tensor(torch.arange(L_Q).unsqueeze(1)), 
-                TensorIndex.Tensor(index_sample), TensorIndex.Ellipsis];
+            var K_sample = K_expand[TensorIndex.Colon, TensorIndex.Colon,
+                                    TensorIndex.Tensor(torch.arange(L_Q).unsqueeze(1)),
+                                    TensorIndex.Tensor(index_sample), TensorIndex.Colon];
             var Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze(-2);
             // find the Top_k query with sparisty measurement
             var M = Q_K_sample.max(-1).values - torch.div(Q_K_sample.sum(-1), L_K);
             var M_top = M.topk(n_top, sorted: false).indexes;
             // use the reduced Q to calculate Q_K
-            var Q_reduce = Q[torch.arange(B)[TensorIndex.Ellipsis, null, null], torch.arange(H)[null, TensorIndex.Ellipsis, null], M_top, TensorIndex.Ellipsis];
+            var Q_reduce = Q[TensorIndex.Tensor(torch.arange(B)[TensorIndex.Colon, TensorIndex.Null, TensorIndex.Null]),
+                                TensorIndex.Tensor(torch.arange(H)[TensorIndex.Null, TensorIndex.Colon, TensorIndex.Null]),
+                                TensorIndex.Tensor(M_top),
+                                TensorIndex.Colon];
             var Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1));
             return (Q_K, M_top);
         }
@@ -68,7 +71,7 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Layers
             Tensor context_in,
             Tensor V,
             Tensor scores,
-            long index,
+            Tensor index,
             long L_Q,
             IMasking attn_mask)
         {
@@ -78,10 +81,16 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Layers
                 scores.masked_fill_(attn_mask.mask, -np.Inf);
             }
             var attn = torch.softmax(scores, dim: -1);
-            context_in[torch.arange(B)[TensorIndex.Ellipsis, null, null], torch.arange(H)[null, TensorIndex.Ellipsis, null], index, TensorIndex.Ellipsis] = torch.matmul(attn, V).type_as(context_in);
+            context_in[TensorIndex.Tensor(torch.arange(B)[TensorIndex.Colon, TensorIndex.Null, TensorIndex.Null]),
+                        TensorIndex.Tensor(torch.arange(H)[TensorIndex.Null, TensorIndex.Colon, TensorIndex.Null]),
+                        TensorIndex.Tensor(index),
+                        TensorIndex.Colon] = torch.matmul(attn, V).type_as(context_in);
             if (this.output_attention) {
                 var attns = (torch.ones(new long[] { B, H, L_V, L_V }) / L_V).type_as(attn).to(attn.device);
-                attns[torch.arange(B)[TensorIndex.Ellipsis, null, null], torch.arange(H)[null, TensorIndex.Ellipsis, null], index, TensorIndex.Ellipsis] = attn;
+                attns[TensorIndex.Tensor(torch.arange(B)[TensorIndex.Colon, TensorIndex.Null, TensorIndex.Null]),
+                        TensorIndex.Tensor(torch.arange(H)[TensorIndex.Null, TensorIndex.Colon, TensorIndex.Null]),
+                        TensorIndex.Tensor(index),
+                        TensorIndex.Colon] = attn;
                 return (context_in, attns);
             } else {
                 return (context_in, null);
@@ -108,7 +117,7 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Layers
             // get the context
             var context = this._get_initial_context(values, L_Q);
             // update the context with selected top_k queries
-            (context, var attn) = this._update_context(context, values, scores_top, index.item<long>(), L_Q, attn_mask);
+            (context, var attn) = this._update_context(context, values, scores_top, index, L_Q, attn_mask);
             return (context.transpose(2, 1).contiguous(), attn);
         }
     }

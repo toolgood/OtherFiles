@@ -5,13 +5,14 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
+        <Configurations>Debug;Release;CUDA</Configurations>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CsvHelper" Version="30.0.1" />
         <PackageReference Include="IniFile.NET" Version="1.6.0" />
         <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.3" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NumpyDotNet" Version="0.9.83.6" />
         <PackageReference Include="TorchSharp" Version="0.99.3" />
     </ItemGroup>
@@ -20,29 +21,29 @@
         <PackageReference Include="TorchSharp-cpu" Version="0.99.3" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(Configuration)'=='CUDA'">
+		<PackageReference Include="TorchSharp-cuda-windows" Version="0.99.3" />
+	</ItemGroup>
+
     <ItemGroup Condition="'$(Configuration)'=='Release'">
         <PackageReference Include="TorchSharp-cpu" Version="0.99.2" />
     </ItemGroup>
 
 
-    <ItemGroup Condition="'$(Configuration)' == 'CUDA' ">
-        <PackageReference Include="libtorch-cuda-11.7-win-x64" Version="1.13.0.1" />
-    </ItemGroup>
-
 
     <ItemGroup>
-      <None Update="Datasets\ETT-small\ETTh1.csv">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Datasets\ETT-small\ETTh2.csv">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Datasets\ETT-small\ETTm1.csv">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Datasets\ETT-small\ETTm2.csv">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="Datasets\ETT-small\ETTh1.csv">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Datasets\ETT-small\ETTh2.csv">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Datasets\ETT-small\ETTm1.csv">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Datasets\ETT-small\ETTm2.csv">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

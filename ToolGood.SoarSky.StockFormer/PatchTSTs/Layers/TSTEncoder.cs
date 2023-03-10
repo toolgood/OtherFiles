@@ -23,18 +23,13 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         {
             Tensor output = src;
             Tensor scores = null;
-            if (res_attention)
-            {
-                foreach (var mod in layers)
-                {
+            if (res_attention) {
+                foreach (var mod in layers) {
                     (output, scores) = mod.forward(output, prev: scores, key_padding_mask: key_padding_mask, attn_mask: attn_mask);
                 }
                 return output;
-            }
-            else
-            {
-                foreach (var mod in layers)
-                {
+            } else {
+                foreach (var mod in layers) {
                     (output, _) = mod.forward(output, key_padding_mask: key_padding_mask, attn_mask: attn_mask);
                 }
                 return output;

@@ -13,11 +13,11 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 #endregion
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using static TorchSharp.torch;
-using System.Linq;
+using System.Text;
 
+#pragma warning disable IDE1006 // 命名样式
+#pragma warning disable CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
+#pragma warning disable CS8632 // 只能在 "#nullable" 注释上下文内的代码中使用可为 null 的引用类型的注释。
 namespace System
 {
     public static partial class TorchExtension
@@ -229,9 +229,9 @@ namespace System
 
         public static IDictionary<T1, T2> copy<T1, T2>(this IDictionary<T1, T2> dict)
         {
-            Dictionary<T1,T2> copy = new Dictionary<T1, T2>();
+            Dictionary<T1, T2> copy = new Dictionary<T1, T2>();
             foreach (var item in dict) {
-                copy[item.Key]=item.Value;
+                copy[item.Key] = item.Value;
             }
             return copy;
         }
@@ -333,9 +333,7 @@ namespace System
                 }
             }
         }
-
     }
-
     public static class os
     {
         public static void makedirs(string path)
@@ -431,6 +429,7 @@ namespace System
             {
                 return Path.GetDirectoryName(path);
             }
+
             public static long getsize(string path)
             {
                 return new FileInfo(path).Length;
@@ -461,6 +460,157 @@ namespace System
         }
     }
 
+    public class PythonFile
+    {
+        private System.IO.FileStream fileStream;
+        private bool bin;
 
+        public static PythonFile open(string file, string mode="+", string encoding = "UTF-8")
+        {
+            PythonFile result = new PythonFile();
+
+            if (mode.Contains("+")) {
+                result.fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                if (mode.Contains("a")) {
+                    result.fileStream.Seek(0, SeekOrigin.End);
+                }
+            } else if (mode.Contains("a")) {
+                result.fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.Write);
+                result.fileStream.Seek(0, SeekOrigin.End);
+            } else if (mode.Contains("w")) {
+                result.fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.Write);
+            } else {
+                result.fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read);
+            }
+            result.bin = mode.Contains("b");
+            return result;
+        }
+        public string[] readline(int size = 1)
+        {
+            var read = new System.IO.StreamReader(fileStream);
+            string[] result = new string[size];
+            for (int i = 0; i < size; i++) {
+                result[i] = read.ReadLine();
+            }
+            read.ReadToEnd();
+            return result;
+        }
+        public string readline()
+        {
+            var read = new System.IO.StreamReader(fileStream);
+            string result = read.ReadLine();
+            read.ReadToEnd();
+            return result;
+        }
+        public string read()
+        {
+            var read = new System.IO.StreamReader(fileStream);
+            var r = read.Read();
+            read.ReadToEnd();
+            return ((char)r).ToString();
+        }
+
+        public string read(int size = 1)
+        {
+            if (size <= 0) {
+                var read = new System.IO.StreamReader(fileStream);
+                var r = read.ReadToEnd();
+                read.ReadToEnd();
+                return r;
+            } else {
+                var read = new System.IO.StreamReader(fileStream);
+                StringBuilder stringBuilder = new StringBuilder();
+                for (int i = 0; i < size; i++) {
+                    var r = read.Read();
+                    stringBuilder.Append((char)r);
+                }
+                read.ReadToEnd();
+                return stringBuilder.ToString();
+            }
+        }
+
+        public void write(string txt)
+        {
+            var write = new System.IO.StreamWriter(fileStream);
+            write.Write(txt);
+            write.Close();
+        }
+
+        public void write(double num)
+        {
+            if (bin) {
+                var write = new System.IO.BinaryWriter(fileStream);
+                write.Write(num);
+                write.Close();
+            } else {
+                var write = new System.IO.StreamWriter(fileStream);
+                write.Write(num.ToString());
+                write.Close();
+            }
+        }
+        public void write(float num)
+        {
+            if (bin) {
+                var write = new System.IO.BinaryWriter(fileStream);
+                write.Write(num);
+                write.Close();
+            } else {
+                var write = new System.IO.StreamWriter(fileStream);
+                write.Write(num.ToString());
+                write.Close();
+            }
+        }
+        public void write(int num)
+        {
+            if (bin) {
+                var write = new System.IO.BinaryWriter(fileStream);
+                write.Write(num);
+                write.Close();
+            } else {
+                var write = new System.IO.StreamWriter(fileStream);
+                write.Write(num.ToString());
+                write.Close();
+            }
+        }
+        public void write(long num)
+        {
+            if (bin) {
+                var write = new System.IO.BinaryWriter(fileStream);
+                write.Write(num);
+                write.Close();
+            } else {
+                var write = new System.IO.StreamWriter(fileStream);
+                write.Write(num.ToString());
+                write.Close();
+            }
+        }
+
+        public void seek(int offset, int whence = 0)
+        {
+            if (whence == 0) {
+                fileStream.Seek(offset, SeekOrigin.Begin);
+            } else if (whence == 1) {
+                fileStream.Seek(offset, SeekOrigin.Current);
+            } else if (whence == 2) {
+                fileStream.Seek(offset, SeekOrigin.End);
+            } else {
+                throw new Exception("whence is error.");
+            }
+        }
+
+        public long tell()
+        {
+            return fileStream.Position;
+        }
+
+        public void close()
+        {
+            fileStream.Close();
+        }
+    }
 
 }
+#pragma warning restore CS8632 // 只能在 "#nullable" 注释上下文内的代码中使用可为 null 的引用类型的注释。
+#pragma warning restore CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
+#pragma warning restore IDE1006 // 命名样式
+

@@ -48,24 +48,18 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             var v_s = W_V.forward(V).view(bs, -1, n_heads, d_v).transpose(1, 2);
             // Apply Scaled Dot-Product Attention (multiple heads)
             Tensor output, attn_weights, attn_scores = null;
-            if (res_attention)
-            {
+            if (res_attention) {
                 (output, attn_weights, attn_scores) = sdp_attn.forward(q_s, k_s, v_s, prev: prev, key_padding_mask: key_padding_mask, attn_mask: attn_mask);
-            }
-            else
-            {
+            } else {
                 (output, attn_weights, _) = sdp_attn.forward(q_s, k_s, v_s, key_padding_mask: key_padding_mask, attn_mask: attn_mask);
             }
             // output: [bs x n_heads x q_len x d_v], attn: [bs x n_heads x q_len x q_len], scores: [bs x n_heads x max_q_len x q_len]
             // back to the original inputs dimensions
             output = output.transpose(1, 2).contiguous().view(bs, -1, n_heads * d_v);
             output = to_out.forward(output);
-            if (res_attention)
-            {
+            if (res_attention) {
                 return (output, attn_weights, attn_scores);
-            }
-            else
-            {
+            } else {
                 return (output, attn_weights, null);
             }
         }

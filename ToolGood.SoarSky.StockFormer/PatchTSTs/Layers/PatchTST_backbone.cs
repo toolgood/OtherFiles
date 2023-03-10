@@ -36,8 +36,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         {
             // RevIn
             this.revin = revin;
-            if (this.revin)
-            {
+            if (this.revin) {
                 revin_layer = new RevIN(c_in, affine: affine, subtract_last: subtract_last);
             }
             // Patching
@@ -45,8 +44,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             this.stride = stride;
             this.padding_patch = padding_patch;
             var patch_num = Convert.ToInt32((context_window - patch_len) / stride + 1);
-            if (padding_patch == "end")
-            {
+            if (padding_patch == "end") {
                 // can be modified to general case
                 padding_patch_layer = ReplicationPad1d(stride); // nn.ReplicationPad1d((0, stride));
                 patch_num += 1;
@@ -62,12 +60,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             this.pretrain_head = pretrain_head;
             this.head_type = head_type;
             this.individual = individual;
-            if (this.pretrain_head)
-            {
+            if (this.pretrain_head) {
                 head = create_pretrain_head(head_nf, c_in, fc_dropout);
-            }
-            else if (head_type == "flatten")
-            {
+            } else if (head_type == "flatten") {
                 head = new Flatten_Head(this.individual, n_vars, head_nf, target_window, head_dropout: head_dropout);
             }
         }
@@ -76,15 +71,13 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         {
             // z: [bs x nvars x seq_len]
             // norm
-            if (revin)
-            {
+            if (revin) {
                 z = z.permute(0, 2, 1);
                 z = revin_layer.forward(z, "norm");
                 z = z.permute(0, 2, 1);
             }
             // do patching
-            if (padding_patch == "end")
-            {
+            if (padding_patch == "end") {
                 z = padding_patch_layer.forward(z);
             }
             z = z.unfold(dimension: -1, size: patch_len, step: stride);
@@ -93,8 +86,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             z = backbone.forward(z);
             z = head.forward(z);
             // denorm
-            if (revin)
-            {
+            if (revin) {
                 z = z.permute(0, 2, 1);
                 z = revin_layer.forward(z, "denorm");
                 z = z.permute(0, 2, 1);

@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using ToolGood.SoarSky.StockFormer.Informers.Utils;
-using TorchSharp;
+﻿using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp.Modules;
-using static Tensorboard.ApiDef.Types;
 using static TorchSharp.torch;
 
 namespace ToolGood.SoarSky.StockFormer.Informers.Layers

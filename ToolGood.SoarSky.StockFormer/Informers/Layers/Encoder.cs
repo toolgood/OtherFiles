@@ -1,4 +1,4 @@
-﻿using ToolGood.SoarSky.StockFormer.Informers.Utils;
+﻿using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;

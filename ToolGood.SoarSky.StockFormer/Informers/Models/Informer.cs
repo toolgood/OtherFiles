@@ -1,26 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Tensorboard.ApiDef.Types;
-using static TorchSharp.torch;
-using ToolGood.SoarSky.StockFormer.Informers.Layers;
-using TorchSharp.Modules;
+﻿using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
-using ToolGood.SoarSky.StockFormer.Informers.Utils;
-
-using TriangularCausalMask = ToolGood.SoarSky.StockFormer.Informers.Utils.TriangularCausalMask;
-using ProbMask = ToolGood.SoarSky.StockFormer.Informers.Utils.ProbMask;
-using Encoder = ToolGood.SoarSky.StockFormer.Informers.Layers.Encoder;
-using EncoderLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.EncoderLayer;
+using TorchSharp.Modules;
+using static TorchSharp.torch;
+using AttentionLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.AttentionLayer;
 using ConvLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.ConvLayer;
 using Decoder = ToolGood.SoarSky.StockFormer.Informers.Layers.Decoder;
 using DecoderLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.DecoderLayer;
+using Encoder = ToolGood.SoarSky.StockFormer.Informers.Layers.Encoder;
+using EncoderLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.EncoderLayer;
 using FullAttention = ToolGood.SoarSky.StockFormer.Informers.Layers.FullAttention;
 using ProbAttention = ToolGood.SoarSky.StockFormer.Informers.Layers.ProbAttention;
-using AttentionLayer = ToolGood.SoarSky.StockFormer.Informers.Layers.AttentionLayer;
-using DataEmbedding = ToolGood.SoarSky.StockFormer.Informers.Utils.DataEmbedding;
 
 namespace ToolGood.SoarSky.StockFormer.Informers.Models
 {
@@ -75,6 +64,8 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Models
             // this.end_conv1 = nn.Conv1d(in_channels=label_len+out_len, out_channels=out_len, kernel_size=1, bias=True)
             // this.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=c_out, kernel_size=1, bias=True)
             this.projection = nn.Linear(d_model, c_out, hasBias: true);
+
+            this.RegisterComponents();
         }
         public virtual (Tensor, List<Tensor>) forward(
         Tensor x_enc,
@@ -93,9 +84,9 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Models
             // dec_out = this.end_conv1.forward(dec_out)
             // dec_out = this.end_conv2.forward(dec_out.transpose(2,1)).transpose(1,2)
             if (this.output_attention) {
-                return (dec_out[TensorIndex.Ellipsis, -this.pred_len, TensorIndex.Ellipsis], attns);
+                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], attns);
             } else {
-                return (dec_out[TensorIndex.Ellipsis, -this.pred_len, TensorIndex.Ellipsis], null);
+                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], null);
             }
         }
     }

@@ -18,9 +18,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         public virtual Tensor forward(Tensor x)
         {
             // padding on the both ends of time series
-            var front = x[TensorIndex.Ellipsis, TensorIndex.Slice(0, 1, null), TensorIndex.Ellipsis].repeat(1, (kernel_size - 1) / 2, 1);
+            var front = x[TensorIndex.Colon, TensorIndex.Slice(0, 1, null), TensorIndex.Colon].repeat(1, (kernel_size - 1) / 2, 1);
             var last = x.size(1) - 1;
-            var end = x[TensorIndex.Ellipsis, last, TensorIndex.Ellipsis].repeat(1, (kernel_size - 1) / 2, 1);
+            var end = x[TensorIndex.Colon, last, TensorIndex.Colon].repeat(1, (kernel_size - 1) / 2, 1);
             x = cat(new List<Tensor> { front, x, end }, dim: 1);
             x = avg.forward(x.permute(0, 2, 1));
             x = x.permute(0, 2, 1);

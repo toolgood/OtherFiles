@@ -37,32 +37,26 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         //             attn   : [bs x n_heads x q_len x seq_len]
         //             scores : [bs x n_heads x q_len x seq_len]
         //         
-        public virtual (Tensor, Tensor, Tensor) forward(Tensor q, Tensor k, Tensor v,
-            Tensor prev = null, Tensor key_padding_mask = null, Tensor attn_mask = null)
+        public virtual (Tensor, Tensor, Tensor) forward(Tensor q, Tensor k, Tensor v, Tensor prev = null,
+                                                        Tensor key_padding_mask = null, Tensor attn_mask = null)
         {
             // Scaled MatMul (q, k) - similarity scores for all pairs of positions in an input sequence
             var attn_scores = matmul(q, k) * scale;
             // Add pre-softmax attention scores from the previous layer (optional)
-            if (prev is not null)
-            {
+            if (prev is not null) {
                 attn_scores = attn_scores + prev;
             }
             // Attention mask (optional)
-            if (attn_mask is not null)
-            {
+            if (attn_mask is not null) {
                 // attn_mask with shape [q_len x seq_len] - only used when q_len == seq_len
-                if (attn_mask.dtype == @bool)
-                {
+                if (attn_mask.dtype == @bool) {
                     attn_scores.masked_fill_(attn_mask, -np.Inf);
-                }
-                else
-                {
+                } else {
                     attn_scores += attn_mask;
                 }
             }
             // Key padding mask (optional)
-            if (key_padding_mask is not null)
-            {
+            if (key_padding_mask is not null) {
                 // mask with shape [bs x q_len] (only when max_w_len == q_len)
                 attn_scores.masked_fill_(key_padding_mask.unsqueeze(1).unsqueeze(2), -np.Inf);
             }
@@ -71,12 +65,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             attn_weights = attn_dropout.forward(attn_weights);
             // compute the new values given the attention weights
             var output = matmul(attn_weights, v);
-            if (res_attention)
-            {
+            if (res_attention) {
                 return (output, attn_weights, attn_scores);
-            }
-            else
-            {
+            } else {
                 return (output, attn_weights, null);
             }
         }

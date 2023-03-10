@@ -8,6 +8,9 @@ using TorchSharp.Modules;
 using ToolGood.SoarSky.StockFormer.PatchTSTs.Exps;
 using static Tensorboard.ApiDef.Types;
 using ToolGood.SoarSky.StockFormer.DataProvider;
+using static TorchSharp.torch;
+using TorchSharp;
+using ToolGood.SoarSky.StockFormer.NsAutoformers.Models;
 
 namespace ToolGood.SoarSky.StockFormer
 {
@@ -16,9 +19,86 @@ namespace ToolGood.SoarSky.StockFormer
         static void Main(string[] args)
         {
             Informer();
+            Autoformer();
+
+            NsTransformer();
+            NsAutoformer();
+            PatchTST();
 
 
- 
+
+        }
+        public static void NsTransformer()
+        {
+            var expConfig = new ToolGood.SoarSky.StockFormer.NsTransformers.Exps.Exp_Config();
+
+            expConfig.data = "ETTh1";
+            expConfig.features = "M";
+            expConfig.seq_len = 96;
+            expConfig.label_len = 48;
+            expConfig.pred_len = 96;
+
+            expConfig.e_layers = 2;
+            expConfig.d_layers = 1;
+            expConfig.enc_in = 7;
+            expConfig.dec_in = 7;
+            expConfig.c_out = 7;
+            expConfig.p_hidden_dims = new List<int> { 256, 256 };
+            expConfig.p_hidden_layers = 2;
+
+            var exp = new ToolGood.SoarSky.StockFormer.NsTransformers.Exps.Exp_Main(expConfig);
+            var model = exp._build_model();
+            model.save("NsTransformer.pth");
+            //exp.train(exp.ToString());
+        }
+
+        public static void NsAutoformer()
+        {
+            var expConfig = new ToolGood.SoarSky.StockFormer.NsAutoformers.Models.NsAutoformerConfig();
+
+            expConfig.data = "ETTh1";
+            expConfig.features = "M";
+            expConfig.seq_len = 96;
+            expConfig.label_len = 48;
+            expConfig.pred_len = 96;
+
+            expConfig.e_layers = 2;
+            expConfig.d_layers = 1;
+            expConfig.enc_in = 7;
+            expConfig.dec_in = 7;
+            expConfig.c_out = 7;
+            expConfig.p_hidden_dims = new List<int> { 256, 256 };
+            expConfig.p_hidden_layers = 2;
+
+            var exp = new ToolGood.SoarSky.StockFormer.NsAutoformers.Exps.Exp_Main(expConfig);
+            var model = exp._build_model();
+            model.save("NsAutoformer.pth");
+         //   exp.train(exp.ToString());
+        }
+
+
+        public static void Autoformer()
+        {
+            var expConfig = new ToolGood.SoarSky.StockFormer.Autoformers.Exps.Exp_Config();
+            //expConfig.is_training=true;
+            expConfig.data = "ETTh1";
+            expConfig.features = "M";
+            expConfig.seq_len = 96;
+            expConfig.label_len = 48;
+            expConfig.pred_len = 24;
+
+            expConfig.e_layers = 2;
+            expConfig.d_layers = 1;
+            expConfig.factor = 3;
+            expConfig.enc_in = 7;
+            expConfig.dec_in = 7;
+            expConfig.c_out = 7;
+
+            var exp = new ToolGood.SoarSky.StockFormer.Autoformers.Exps.Exp_Main(expConfig);
+            var model = exp._build_model();
+            model.save("Autoformer.pth");
+            exp.train(exp.ToString());
+
         }
 
         public static void Informer()
@@ -33,12 +113,12 @@ namespace ToolGood.SoarSky.StockFormer
             expConfig.d_layers = 1;
             expConfig.attn = "prob";
             var exp = new ToolGood.SoarSky.StockFormer.Informers.Exps.Exp_Main(expConfig);
-            exp.train(exp.ToString());
-
-
+            var model = exp._build_model();
+            model.save("Informer.pth");
+           // exp.train(exp.ToString());
         }
 
-        public static void PatchTST_Test()
+        public static void PatchTST()
         {
             var expConfig = new ToolGood.SoarSky.StockFormer.PatchTSTs.Exps.ExpConfig();
             expConfig.features = "M";
@@ -57,7 +137,9 @@ namespace ToolGood.SoarSky.StockFormer
             expConfig.learning_rate = 0.0001;
 
             var exp = new ToolGood.SoarSky.StockFormer.PatchTSTs.Exps.Exp_Main(expConfig);
-            exp.train(exp.ToString());
+            var model = exp._build_model();
+            model.save("PatchTST.pth");
+         //   exp.train(exp.ToString());
         }
     }
 }

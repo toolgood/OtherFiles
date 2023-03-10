@@ -26,12 +26,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
 
         public override Tensor forward(Tensor x)
         {
-            if (contiguous)
-            {
+            if (contiguous) {
                 return x.transpose(dims[0], dims[1]).contiguous();
-            }
-            else
-            {
+            } else {
                 return x.transpose(dims[0], dims[1]);
             }
         }

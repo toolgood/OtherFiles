@@ -1,9 +1,35 @@
 ﻿using System.Globalization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ToolGood.SoarSky.StockFormer.DataProvider
 {
     internal class Timefeatures
     {
+        public static float[] time_features(DateTime date, string freq = "h")
+        {
+            Dictionary<string, List<string>> features_by_offsets = new Dictionary<string, List<string>> {
+                { "Y",new List<string>(){  } },
+                { "M",new List<string>(){ "MonthOfYear" } },
+                { "W",new List<string>(){ "DayOfMonth", "WeekOfYear" } },
+                { "D",new List<string>(){ "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+                { "B",new List<string>(){ "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+                { "H",new List<string>(){ "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+                { "T",new List<string>(){ "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+                { "S",new List<string>(){ "SecondOfMinute", "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+
+                { "L_D",new List<string>(){ "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear", "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_H",new List<string>(){ "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear" , "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_T",new List<string>(){ "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear" , "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_S",new List<string>(){ "SecondOfMinute", "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear", "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+            };
+            var f = features_by_offsets[freq.ToUpper()];
+            var item = new float[f.Count];
+            for (int i = 0; i < f.Count; i++) {
+                item[i] = (float)time_features2(date, f[i]);
+            }
+            return item;
+        }
+
         public static List<float[]> time_features(ICollection<DateTime> dates, string freq = "h")
         {
             var supported_freq_msg = @"
@@ -30,13 +56,18 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 { "H",new List<string>(){ "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
                 { "T",new List<string>(){ "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
                 { "S",new List<string>(){ "SecondOfMinute", "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "DayOfYear" } },
+
+                { "L_D",new List<string>(){ "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear", "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_H",new List<string>(){ "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear" , "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_T",new List<string>(){ "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear" , "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
+                { "L_S",new List<string>(){ "SecondOfMinute", "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear", "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
             };
             var result = new List<float[]>();
             var f = features_by_offsets[freq.ToUpper()];
             foreach (var date in dates) {
                 var item = new float[f.Count];
                 for (int i = 0; i < f.Count; i++) {
-                    item[i] = (float)time_features(date, f[i]);
+                    item[i] = (float)time_features2(date, f[i]);
                 }
                 result.Add(item);
             }
@@ -44,7 +75,7 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         }
         private static ChineseLunisolarCalendar chineseLunisolarCalendar = new ChineseLunisolarCalendar();
 
-        private static double time_features(DateTime index, string freq)
+        private static double time_features2(DateTime index, string freq)
         {
             int year, month;
             switch (freq) {

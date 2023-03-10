@@ -27,25 +27,19 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
             this.eps = eps;
             this.affine = affine;
             this.subtract_last = subtract_last;
-            if (this.affine)
-            {
+            if (this.affine) {
                 _init_params();
             }
         }
 
         public virtual Tensor forward(Tensor x, string mode)
         {
-            if (mode == "norm")
-            {
+            if (mode == "norm") {
                 _get_statistics(x);
                 x = _normalize(x);
-            }
-            else if (mode == "denorm")
-            {
+            } else if (mode == "denorm") {
                 x = _denormalize(x);
-            }
-            else
-            {
+            } else {
                 throw new NotImplementedException();
             }
             return x;
@@ -61,13 +55,10 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
         public virtual void _get_statistics(Tensor x)
         {
             long[] dim2reduce = Enumerable.Range(1, (int)x.ndim - 1 - 1).Select(q => (long)q).ToArray();
-            if (subtract_last)
-            {
+            if (subtract_last) {
                 var last = x.size(1) - 1;
-                this.last = x[TensorIndex.Ellipsis, last, TensorIndex.Ellipsis].unsqueeze(1);
-            }
-            else
-            {
+                this.last = x[TensorIndex.Colon, last, TensorIndex.Colon].unsqueeze(1);
+            } else {
                 mean = torch.mean(x, dimensions: dim2reduce, keepdim: true).detach();
             }
             stdev = sqrt(var(x, dimensions: dim2reduce, keepdim: true, unbiased: false) + eps).detach();
@@ -75,17 +66,13 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
 
         public virtual Tensor _normalize(Tensor x)
         {
-            if (subtract_last)
-            {
+            if (subtract_last) {
                 x = x - last;
-            }
-            else
-            {
+            } else {
                 x = x - mean;
             }
             x = x / stdev;
-            if (affine)
-            {
+            if (affine) {
                 x = x * affine_weight;
                 x = x + affine_bias;
             }
@@ -94,18 +81,14 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Layers
 
         public virtual Tensor _denormalize(Tensor x)
         {
-            if (affine)
-            {
+            if (affine) {
                 x = x - affine_bias;
                 x = x / (affine_weight + eps * eps);
             }
             x = x * stdev;
-            if (subtract_last)
-            {
+            if (subtract_last) {
                 x = x + last;
-            }
-            else
-            {
+            } else {
                 x = x + mean;
             }
             return x;

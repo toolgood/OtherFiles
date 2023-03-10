@@ -2,6 +2,7 @@
 using System.Collections;
 using ToolGood.SoarSky.StockFormer.DataProvider;
 using ToolGood.SoarSky.StockFormer.PatchTSTs.Models;
+using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -90,14 +91,14 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                     batch_x_mark = batch_x_mark.@float().to(device);
                     batch_y_mark = batch_y_mark.@float().to(device);
                     // decoder input
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Ellipsis, -args.pred_len, TensorIndex.Ellipsis]).@float();
-                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Ellipsis, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Ellipsis], dec_inp }, dim: 1).@float().to(device);
+                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
+                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
                     // encoder - decoder
                     var outputs = model.forward(batch_x);
 
                     var f_dim = args.features == "MS" ? -1 : 0;
-                    outputs = outputs[TensorIndex.Ellipsis, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Ellipsis, -args.pred_len, f_dim].to(device);
+                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
                     var pred = outputs.detach().cpu();
                     var @true = batch_y.detach().cpu();
                     var loss = criterion.forward(pred, @true);
@@ -146,15 +147,15 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                     batch_y_mark = batch_y_mark.@float().to(device);
                     // decoder input
                     //var _pred_len = batch_y.size(1) - 1 - this.args.pred_len;
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Ellipsis, TensorIndex.Slice(-args.pred_len), TensorIndex.Ellipsis]).@float();
-                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Ellipsis, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Ellipsis], dec_inp }, dim: 1).@float().to(device);
+                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, TensorIndex.Slice(-args.pred_len), TensorIndex.Colon]).@float();
+                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
                     // encoder - decoder
 
                     outputs = model.forward(batch_x);
                     // print(outputs.shape,batch_y.shape)
                     var f_dim = args.features == "MS" ? -1 : 0;
-                    outputs = outputs[TensorIndex.Ellipsis, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Ellipsis, -args.pred_len, f_dim].to(device);
+                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
                     var loss = criterion.forward(outputs, batch_y);
                     train_loss.append(loss.item<double>());
 
@@ -234,9 +235,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                     batch_x_mark = batch_x_mark.@float().to(device);
                     batch_y_mark = batch_y_mark.@float().to(device);
                     // decoder input
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Ellipsis, -args.pred_len, TensorIndex.Ellipsis]).@float();
+                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
                     dec_inp = cat(new List<Tensor> {
-                            batch_y[TensorIndex.Ellipsis,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Ellipsis],
+                            batch_y[TensorIndex.Colon,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Colon],
                             dec_inp
                         }, dim: 1).@float().to(device);
                     // encoder - decoder
@@ -245,8 +246,8 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
 
                     var f_dim = args.features == "MS" ? -1 : 0;
                     // print(outputs.shape,batch_y.shape)
-                    outputs = outputs[TensorIndex.Ellipsis, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Ellipsis, -args.pred_len, f_dim].to(device);
+                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
                     outputs = outputs.detach().cpu();//.numpy();
                     batch_y = batch_y.detach().cpu();//.numpy();
                     var pred = outputs;
@@ -257,8 +258,8 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                     if (i % 20 == 0)
                     {
                         var input = batch_x.detach().cpu();//.numpy();
-                        //var gt = np.concatenate((input[0, TensorIndex.Ellipsis, ^1], @true[0, TensorIndex.Ellipsis, ^1]), axis: 0);
-                        //var pd = np.concatenate((input[0, TensorIndex.Ellipsis, ^1], pred[0, TensorIndex.Ellipsis, ^1]), axis: 0);
+                        //var gt = np.concatenate((input[0, TensorIndex.Colon, ^1], @true[0, TensorIndex.Colon, ^1]), axis: 0);
+                        //var pd = np.concatenate((input[0, TensorIndex.Colon, ^1], pred[0, TensorIndex.Colon, ^1]), axis: 0);
                         //   visual(gt, pd, os.path.join(folder_path, i.ToString() + ".pdf"));
                     }
                 }
@@ -326,7 +327,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                             batch_y.shape[2]
                         }).@float().to(batch_y.device);
                     dec_inp = cat(new List<Tensor> {
-                            batch_y[TensorIndex.Ellipsis,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Ellipsis],
+                            batch_y[TensorIndex.Colon,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Colon],
                             dec_inp
                         }, dim: 1).@float().to(device);
                     // encoder - decoder
