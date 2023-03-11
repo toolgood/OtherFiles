@@ -1,7 +1,10 @@
 ﻿using CsvHelper;
 using System.Diagnostics;
 using System.Globalization;
+using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
+using TorchSharp.Modules;
+using static ToolGood.SoarSky.StockFormer.DataProvider.Dataset_ETT_hour;
 using static TorchSharp.torch;
 using static TorchSharp.torch.utils.data;
 
@@ -10,9 +13,9 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
     public class Dataset_ETT_hour : Dataset
     {
         public string data_path;
-        public List<float[]> data_stamp;
-        public List<float[]> data_x;
-        public List<float[]> data_y;
+        public List<double[]> data_stamp;
+        public List<double[]> data_x;
+        public List<double[]> data_y;
         public string features;
         public string freq;
         public int label_len;
@@ -74,24 +77,33 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
             var file = os.path.join(this.root_path, this.data_path);
             using (var reader = new StreamReader(file))
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture)) {
-                var records = csv.GetRecords<ETT>();
+                var records = csv.GetRecords<ETT>().ToList();
 
-                records = records.Skip(border1).Take(border2 - border1).ToList();
-                //if (this.scale) {
-                //    records = records.Skip(border1s[0]).Take(border2s[0]- border1s[0]).ToList();
-                //}  
-                List<float[]> data = new List<float[]>();
-                foreach (var item in records) {
-                    float[] datas = new float[7];
-                    datas[0] = (float)item.HUFL;
-                    datas[1] = (float)item.HULL;
-                    datas[2] = (float)item.MUFL;
-                    datas[3] = (float)item.MULL;
-                    datas[4] = (float)item.LUFL;
-                    datas[5] = (float)item.LULL;
-                    datas[6] = (float)item.OT;
+                var records2 = new List<ETT>();
+                for (int i = border1s[0]; i < border2s[0]; i++) { records2.Add(records[i]); }
+                StandardScaler2 standardScaler = new StandardScaler2();
+                standardScaler.fit(records2);
+                // array([ 7.93774225,  2.02103866,  5.0797706 ,  0.74618588,  2.78176239,        0.78845312, 17.1282617 ])
+                // array([33.78805569,  4.36853745, 30.45708257,  3.71093711,  1.04759863,        0.39719822, 84.20798753])
+                var item2 = standardScaler.transform(records[0]);
+                // array([-0.36312285, -0.0057598, -0.63071223, -0.14752332, 1.38857471,        0.87514257, 1.46055158])
+
+
+                List<double[]> data = new List<double[]>();
+                for (int i = border1; i < border2; i++) {
+                    var item = standardScaler.transform(records[i]);
+                    double[] datas = new double[7];
+                    datas[0] = (double)item.HUFL;
+                    datas[1] = (double)item.HULL;
+                    datas[2] = (double)item.MUFL;
+                    datas[3] = (double)item.MULL;
+                    datas[4] = (double)item.LUFL;
+                    datas[5] = (double)item.LULL;
+                    datas[6] = (double)item.OT;
+
                     data.Add(datas);
                 }
+
                 this.data_x = data;
                 this.data_y = data;
 
@@ -106,8 +118,7 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         private int size;
 
         public override long Count {
-            get
-            {
+            get {
                 return this.size - this.seq_len - this.pred_len + 1;
             }
         }
@@ -134,21 +145,88 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
             };
         }
 
-        public Tensor GetTensor(List<float[]> floats, int begin, int end)
+        public class StandardScaler2
         {
-            List<Tensor> list = new List<Tensor>();
-            for (int i = begin; i < end; i++) {
-                list.Add(torch.tensor(floats[i]));
+            private double[] mean;
+            private double[] std;
+            public StandardScaler2() { }
+
+
+            public void fit(List<ETT> datas)
+            {
+                mean = new double[7];
+                std = new double[7];
+
+                var index = 0;
+                var (m, s) = fit(datas.Select(q => q.HUFL).ToArray());
+                mean[index] = m; std[index++] = s;
+                (m, s) = fit(datas.Select(q => q.HULL).ToArray());
+
+                mean[index] = m; std[index++] = s;
+                (m, s) = fit(datas.Select(q => q.MUFL).ToArray());
+                mean[index] = m; std[index++] = s;
+                (m, s) = fit(datas.Select(q => q.MULL).ToArray());
+                mean[index] = m; std[index++] = s;
+
+                (m, s) = fit(datas.Select(q => q.LUFL).ToArray());
+                mean[index] = m; std[index++] = s;
+                (m, s) = fit(datas.Select(q => q.LULL).ToArray());
+                mean[index] = m; std[index++] = s;
+                (m, s) = fit(datas.Select(q => q.OT).ToArray());
+                mean[index] = m; std[index++] = s;
             }
-            return torch.cat(list,0);
+
+            public (double, double) fit(double[] nums)
+            {
+                //nums = nums.OrderBy(x => x).ToArray();
+                var mean = nums.Average();
+                var sum = 0.0;
+                foreach (var num in nums) {
+                    sum += (num - mean) * (num - mean);
+                }
+                var std = Math.Sqrt(sum / (nums.Length - 1));
+                return (mean, std);
+            }
+
+
+
+            public ETT transform(ETT data)
+            {
+                var index = 0;
+                ETT newETT = new ETT();
+                newETT.date = data.date;
+                newETT.HUFL = transform(data.HUFL, index++);
+                newETT.HULL = transform(data.HULL, index++);
+
+                newETT.MUFL = transform(data.MUFL, index++);
+                newETT.MULL = transform(data.MULL, index++);
+
+                newETT.LUFL = transform(data.LUFL, index++);
+                newETT.LULL = transform(data.LULL, index++);
+
+                newETT.OT = transform(data.OT, index++);
+
+                return newETT;
+            }
+
+            public double transform(double data, int index)
+            {
+                return (data - this.mean[index]) / this.std[index];
+            }
         }
-        public Tensor GetTensor(List<float[]> floats, long begin, long end)
+
+
+        public Tensor GetTensor(List<double[]> floats, long begin, long end)
         {
-            List<Tensor> list = new List<Tensor>();
+            double[,] list = new double[end - begin, floats[0].Length];
+            var index = 0;
             for (int i = (int)begin; i < (int)end; i++) {
-                list.Add(torch.tensor(floats[i]));
+                for (int j = 0; j < floats[0].Length; j++) {
+                    list[index, j] = floats[index][j];
+                }
+                index++;
             }
-            return torch.cat(list,0).reshape(new long[] { end - begin, floats[0].Length });
+            return torch.tensor(list);
         }
 
     }

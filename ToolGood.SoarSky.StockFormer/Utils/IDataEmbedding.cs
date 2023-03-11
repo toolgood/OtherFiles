@@ -20,12 +20,7 @@ namespace ToolGood.SoarSky.StockFormer.Utils
 
         public TokenEmbedding value_embedding;
 
-        public DataEmbedding(
-            int c_in,
-            int d_model,
-            string embed_type = "fixed",
-            string freq = "h",
-            double dropout = 0.1) : base("DataEmbedding")
+        public DataEmbedding(int c_in, int d_model, string embed_type = "fixed", string freq = "h", double dropout = 0.1) : base("DataEmbedding")
         {
             value_embedding = new TokenEmbedding(c_in: c_in, d_model: d_model);
             position_embedding = new PositionalEmbedding(d_model: d_model);
@@ -48,12 +43,7 @@ namespace ToolGood.SoarSky.StockFormer.Utils
         public Module<Tensor, Tensor> temporal_embedding;
         public TokenEmbedding value_embedding;
 
-        public DataEmbedding_wo_pos(
-            int c_in,
-            int d_model,
-            string embed_type = "fixed",
-            string freq = "h",
-            double dropout = 0.1) : base("DataEmbedding_wo_pos")
+        public DataEmbedding_wo_pos(int c_in, int d_model, string embed_type = "fixed", string freq = "h", double dropout = 0.1) : base("DataEmbedding_wo_pos")
         {
             this.value_embedding = new TokenEmbedding(c_in: c_in, d_model: d_model);
             this.position_embedding = new PositionalEmbedding(d_model: d_model);

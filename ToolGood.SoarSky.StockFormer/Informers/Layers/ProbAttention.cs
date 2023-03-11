@@ -67,13 +67,7 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Layers
             return contex;
         }
 
-        public virtual (Tensor, Tensor) _update_context(
-            Tensor context_in,
-            Tensor V,
-            Tensor scores,
-            Tensor index,
-            long L_Q,
-            IMasking attn_mask)
+        public virtual (Tensor, Tensor) _update_context(Tensor context_in, Tensor V, Tensor scores, Tensor index, long L_Q, IMasking attn_mask)
         {
             var (B, H, L_V, D) = V.shape.ToLong4();
             if (this.mask_flag) {

@@ -59,7 +59,7 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 //    data_set = new Dataset_Pred(root_path: args.root_path, data_path: args.data_path, flag: flag, size: size,
                 //                                features: args.features, target: args.target, timeenc: timeenc, freq: freq);
             }
-            Console.WriteLine(flag, data_set.Count);
+            Console.WriteLine(flag + " " + data_set.Count);
             var data_loader = new DataLoader(data_set, batchSize: batch_size, shuffle: shuffle_flag, num_worker: args.num_workers/*, drop_last: drop_last*/);
             return (data_set, data_loader);
         }

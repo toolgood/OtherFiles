@@ -1,6 +1,8 @@
 ﻿using ToolGood.SoarSky.StockFormer.NsTransformers.Layers;
 using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
+using static Tensorboard.TensorShapeProto.Types;
+using TorchSharp.Modules;
 using static TorchSharp.torch;
 
 namespace ToolGood.SoarSky.StockFormer.NsTransformers.Models
@@ -59,9 +61,11 @@ namespace ToolGood.SoarSky.StockFormer.NsTransformers.Models
             x_enc = x_enc - mean_enc;
             var std_enc = torch.sqrt(torch.var(x_enc, dimensions: 1, keepdim: true, unbiased: false) + 1E-05).detach();
             x_enc = x_enc / std_enc;
+            // x_dec_new = torch.cat([x_enc[:, -self.label_len: , :], torch.zeros_like(x_dec[:, -self.pred_len:, :])], dim = 1).to(x_enc.device).clone()
+
             var x_dec_new = torch.cat(new List<Tensor> {
-                                    x_enc[TensorIndex.Colon,-this.label_len,TensorIndex.Colon],
-                                    torch.zeros_like(x_dec[TensorIndex.Colon,-this.pred_len,TensorIndex.Colon])
+                                   x_enc[TensorIndex.Colon,TensorIndex.Slice(-this.label_len,null),TensorIndex.Colon],
+                                   torch.zeros_like(x_dec[TensorIndex.Colon,TensorIndex.Slice(-this.pred_len,null),TensorIndex.Colon])
                                 }, dim: 1).to(x_enc.device).clone();
             var tau = this.tau_learner.forward(x_raw, std_enc).exp();
             var delta = this.delta_learner.forward(x_raw, mean_enc);
@@ -73,9 +77,9 @@ namespace ToolGood.SoarSky.StockFormer.NsTransformers.Models
             // De-normalization
             dec_out = dec_out * std_enc + mean_enc;
             if (this.output_attention) {
-                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], attns);
+                return (dec_out[TensorIndex.Colon, TensorIndex.Slice(-this.pred_len), TensorIndex.Colon], attns);
             } else {
-                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], null);
+                return (dec_out[TensorIndex.Colon, TensorIndex.Slice(-this.pred_len), TensorIndex.Colon], null);
             }
         }
     }

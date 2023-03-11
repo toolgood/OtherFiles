@@ -10,6 +10,9 @@
         public double LUFL { get; set; }
         public double LULL { get; set; }
         public double OT { get; set; }
+
+
+     
     }
  
 

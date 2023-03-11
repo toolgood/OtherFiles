@@ -61,8 +61,6 @@ namespace ToolGood.SoarSky.StockFormer.Utils
             this._mask = indicator.view(scores.shape).to(device);
         }
 
-
-
         public Tensor mask
         {
             get

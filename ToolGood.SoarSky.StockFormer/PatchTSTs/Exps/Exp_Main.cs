@@ -81,28 +81,26 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
         {
             var total_loss = new List<double>();
             model.eval();
-            using (var _no_grad = no_grad())
-            {
-                foreach (var dict in vali_loader)
-                {
-                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                    batch_x = batch_x.@float().to(device);
-                    batch_y = batch_y.@float();
-                    batch_x_mark = batch_x_mark.@float().to(device);
-                    batch_y_mark = batch_y_mark.@float().to(device);
-                    // decoder input
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
-                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
-                    // encoder - decoder
-                    var outputs = model.forward(batch_x);
+            using (var _no_grad = no_grad()) {
+                foreach (var dict in vali_loader) {
+                    using (var d0 = torch.NewDisposeScope()) {
+                        var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                        batch_x = batch_x.@float().to(device);
+                        batch_y = batch_y.@float();
+                        // decoder input
+                        var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
+                        dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
+                        // encoder - decoder
+                        var outputs = model.forward(batch_x);
 
-                    var f_dim = args.features == "MS" ? -1 : 0;
-                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
-                    var pred = outputs.detach().cpu();
-                    var @true = batch_y.detach().cpu();
-                    var loss = criterion.forward(pred, @true);
-                    total_loss.append(loss.item<double>());
+                        var f_dim = args.features == "MS" ? -1 : 0;
+                        outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                        batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
+                        var pred = outputs.detach().cpu();
+                        var @true = batch_y.detach().cpu();
+                        var loss = criterion.forward(pred, @true);
+                        total_loss.append(loss.item<double>());
+                    }
                 }
             }
             var total_loss2 = total_loss.Average();
@@ -117,8 +115,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
             var (vali_data, vali_loader) = _get_data(flag: "val");
             var (test_data, test_loader) = _get_data(flag: "test");
             var path = os.path.join(args.checkpoints, setting);
-            if (!os.path.exists(path))
-            {
+            if (!os.path.exists(path)) {
                 os.makedirs(path);
             }
             var time_now = DateTime.Now;
@@ -128,74 +125,68 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
             var criterion = _select_criterion();
 
             var scheduler = OneCycleLR(optimizer: model_optim, steps_per_epoch: train_steps, pct_start: args.pct_start, epochs: args.train_epochs, max_lr: args.learning_rate);
-            foreach (var epoch in Enumerable.Range(0, args.train_epochs))
-            {
+            foreach (var epoch in Enumerable.Range(0, args.train_epochs)) {
                 var iter_count = 0;
                 var train_loss = new List<double>();
                 model.train();
                 var epoch_time = DateTime.Now;
                 var i = -1;
-                foreach (var dict in train_loader)
-                {
-                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                    i++;
-                    iter_count += 1;
-                    model_optim.zero_grad();
-                    batch_x = batch_x.@float().to(device);
-                    batch_y = batch_y.@float().to(device);
-                    batch_x_mark = batch_x_mark.@float().to(device);
-                    batch_y_mark = batch_y_mark.@float().to(device);
-                    // decoder input
-                    //var _pred_len = batch_y.size(1) - 1 - this.args.pred_len;
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, TensorIndex.Slice(-args.pred_len), TensorIndex.Colon]).@float();
-                    dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
-                    // encoder - decoder
+                foreach (var dict in train_loader) {
+                    using (var d0 = torch.NewDisposeScope()) {
+                        var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                        i++;
+                        iter_count += 1;
+                        model_optim.zero_grad();
+                        batch_x = batch_x.@float().to(device);
+                        batch_y = batch_y.@float().to(device);
+                        batch_x_mark = batch_x_mark.@float().to(device);
+                        batch_y_mark = batch_y_mark.@float().to(device);
+                        // decoder input
+                        //var _pred_len = batch_y.size(1) - 1 - this.args.pred_len;
+                        var dec_inp = zeros_like(batch_y[TensorIndex.Colon, TensorIndex.Slice(-args.pred_len), TensorIndex.Colon]).@float();
+                        dec_inp = cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(device);
+                        // encoder - decoder
 
-                    outputs = model.forward(batch_x);
-                    // print(outputs.shape,batch_y.shape)
-                    var f_dim = args.features == "MS" ? -1 : 0;
-                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
-                    var loss = criterion.forward(outputs, batch_y);
-                    train_loss.append(loss.item<double>());
+                        outputs = model.forward(batch_x);
+                        // print(outputs.shape,batch_y.shape)
+                        var f_dim = args.features == "MS" ? -1 : 0;
+                        outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                        batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
+                        var loss = criterion.forward(outputs, batch_y);
+                        train_loss.append(loss.item<double>());
 
-                    if ((i + 1) % 100 == 0)
-                    {
-                        Console.WriteLine("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item<double>()));
-                        var speed = (DateTime.Now - time_now) / iter_count;
-                        var left_time = speed * ((args.train_epochs - epoch) * train_steps - i);
-                        Console.WriteLine("\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(speed, left_time));
-                        iter_count = 0;
-                        time_now = DateTime.Now;
+                        if ((i + 1) % 100 == 0) {
+                            Console.WriteLine("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item<double>()));
+                            var speed = (DateTime.Now - time_now) / iter_count;
+                            var left_time = speed * ((args.train_epochs - epoch) * train_steps - i);
+                            Console.WriteLine("\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(speed, left_time));
+                            iter_count = 0;
+                            time_now = DateTime.Now;
+                        }
+
+                        loss.backward();
+                        model_optim.step();
+
+                        if (args.lradj == "TST") {
+                            adjust_learning_rate(model_optim, scheduler, epoch + 1, args, printout: false);
+                            scheduler.step();
+                        }
                     }
-
-                    loss.backward();
-                    model_optim.step();
-
-                    if (args.lradj == "TST")
-                    {
-                        adjust_learning_rate(model_optim, scheduler, epoch + 1, args, printout: false);
-                        scheduler.step();
+                    Console.WriteLine("Epoch: {} cost time: {}".format(epoch + 1, DateTime.Now - epoch_time));
+                    var train_loss2 = train_loss.Average();
+                    var vali_loss = vali(vali_data, vali_loader, criterion);
+                    var test_loss = vali(test_data, test_loader, criterion);
+                    Console.WriteLine("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(epoch + 1, train_steps, train_loss, vali_loss, test_loss));
+                    early_stopping.__call__(vali_loss, model, path);
+                    if (early_stopping.early_stop) {
+                        Console.WriteLine("Early stopping");
+                        break;
                     }
-                }
-                Console.WriteLine("Epoch: {} cost time: {}".format(epoch + 1, DateTime.Now - epoch_time));
-                var train_loss2 = train_loss.Average();
-                var vali_loss = vali(vali_data, vali_loader, criterion);
-                var test_loss = vali(test_data, test_loader, criterion);
-                Console.WriteLine("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(epoch + 1, train_steps, train_loss, vali_loss, test_loss));
-                early_stopping.__call__(vali_loss, model, path);
-                if (early_stopping.early_stop)
-                {
-                    Console.WriteLine("Early stopping");
-                    break;
-                }
-                if (args.lradj != "TST")
-                {
-                    adjust_learning_rate(model_optim, scheduler, epoch + 1, args);
-                }
-                else
-                {
-                    Console.WriteLine("Updating learning rate to {}".format(scheduler.get_last_lr()[0]));
+                    if (args.lradj != "TST") {
+                        adjust_learning_rate(model_optim, scheduler, epoch + 1, args);
+                    } else {
+                        Console.WriteLine("Updating learning rate to {}".format(scheduler.get_last_lr()[0]));
+                    }
                 }
             }
             var best_model_path = path + "/" + "checkpoint.pth";
@@ -206,8 +197,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
         public virtual void test(string setting, bool test = false)
         {
             var (test_data, test_loader) = _get_data(flag: "test");
-            if (test)
-            {
+            if (test) {
                 Console.WriteLine("loading model");
                 var best_model_path = os.path.join("./checkpoints/" + setting, "checkpoint.pth");
                 model.load(best_model_path);
@@ -217,50 +207,48 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
             var trues = new List<Tensor>();
             var inputx = new List<Tensor>();
             var folder_path = "./test_results/" + setting + "/";
-            if (!os.path.exists(folder_path))
-            {
+            if (!os.path.exists(folder_path)) {
                 os.makedirs(folder_path);
             }
             model.eval();
             Tensor batch_x = null;
-            using (var _no_grad = no_grad())
-            {
+            using (var _no_grad = no_grad()) {
                 var i = -1;
-                foreach (var dict in test_loader)
-                {
-                    (batch_x, var batch_y, var batch_x_mark, var batch_y_mark) = GetTensor(dict);
-                    i++;
-                    batch_x = batch_x.@float().to(device);
-                    batch_y = batch_y.@float().to(device);
-                    batch_x_mark = batch_x_mark.@float().to(device);
-                    batch_y_mark = batch_y_mark.@float().to(device);
-                    // decoder input
-                    var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
-                    dec_inp = cat(new List<Tensor> {
+                foreach (var dict in test_loader) {
+                    using (var d0 = torch.NewDisposeScope()) {
+                        (batch_x, var batch_y, var batch_x_mark, var batch_y_mark) = GetTensor(dict);
+                        i++;
+                        batch_x = batch_x.@float().to(device);
+                        batch_y = batch_y.@float().to(device);
+                        batch_x_mark = batch_x_mark.@float().to(device);
+                        batch_y_mark = batch_y_mark.@float().to(device);
+                        // decoder input
+                        var dec_inp = zeros_like(batch_y[TensorIndex.Colon, -args.pred_len, TensorIndex.Colon]).@float();
+                        dec_inp = cat(new List<Tensor> {
                             batch_y[TensorIndex.Colon,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Colon],
                             dec_inp
                         }, dim: 1).@float().to(device);
-                    // encoder - decoder
-                    var outputs = model.forward(batch_x);
+                        // encoder - decoder
+                        var outputs = model.forward(batch_x);
 
 
-                    var f_dim = args.features == "MS" ? -1 : 0;
-                    // print(outputs.shape,batch_y.shape)
-                    outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
-                    batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
-                    outputs = outputs.detach().cpu();//.numpy();
-                    batch_y = batch_y.detach().cpu();//.numpy();
-                    var pred = outputs;
-                    var @true = batch_y;
-                    preds.append(pred);
-                    trues.append(@true);
-                    inputx.append(batch_x.detach().cpu()/*.numpy()*/);
-                    if (i % 20 == 0)
-                    {
-                        var input = batch_x.detach().cpu();//.numpy();
-                        //var gt = np.concatenate((input[0, TensorIndex.Colon, ^1], @true[0, TensorIndex.Colon, ^1]), axis: 0);
-                        //var pd = np.concatenate((input[0, TensorIndex.Colon, ^1], pred[0, TensorIndex.Colon, ^1]), axis: 0);
-                        //   visual(gt, pd, os.path.join(folder_path, i.ToString() + ".pdf"));
+                        var f_dim = args.features == "MS" ? -1 : 0;
+                        // print(outputs.shape,batch_y.shape)
+                        outputs = outputs[TensorIndex.Colon, -args.pred_len, f_dim];
+                        batch_y = batch_y[TensorIndex.Colon, -args.pred_len, f_dim].to(device);
+                        outputs = outputs.detach().cpu();//.numpy();
+                        batch_y = batch_y.detach().cpu();//.numpy();
+                        var pred = outputs;
+                        var @true = batch_y;
+                        preds.append(pred);
+                        trues.append(@true);
+                        inputx.append(batch_x.detach().cpu()/*.numpy()*/);
+                        if (i % 20 == 0) {
+                            var input = batch_x.detach().cpu();//.numpy();
+                                                               //var gt = np.concatenate((input[0, TensorIndex.Colon, ^1], @true[0, TensorIndex.Colon, ^1]), axis: 0);
+                                                               //var pd = np.concatenate((input[0, TensorIndex.Colon, ^1], pred[0, TensorIndex.Colon, ^1]), axis: 0);
+                                                               //   visual(gt, pd, os.path.join(folder_path, i.ToString() + ".pdf"));
+                        }
                     }
                 }
             }
@@ -298,8 +286,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
         public virtual void predict(string setting, bool load = false)
         {
             var (pred_data, pred_loader) = _get_data(flag: "pred");
-            if (load)
-            {
+            if (load) {
                 var path = os.path.join(args.checkpoints, setting);
                 var best_model_path = path + "/" + "checkpoint.pth";
 
@@ -308,40 +295,39 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
             }
             var preds = new List<Tensor>();
             model.eval();
-            using (var _no_grad = no_grad())
-            {
+            using (var _no_grad = no_grad()) {
                 var i = -1;
-                foreach (var dict in pred_loader)
-                {
-                    (var batch_x, var batch_y, var batch_x_mark, var batch_y_mark) = GetTensor(dict);
-                    i++;
+                foreach (var dict in pred_loader) {
+                    using (var d0 = torch.NewDisposeScope()) {
+                        (var batch_x, var batch_y, var batch_x_mark, var batch_y_mark) = GetTensor(dict);
+                        i++;
 
-                    batch_x = batch_x.@float().to(device);
-                    batch_y = batch_y.@float();
-                    batch_x_mark = batch_x_mark.@float().to(device);
-                    batch_y_mark = batch_y_mark.@float().to(device);
-                    // decoder input
-                    var dec_inp = zeros(new long[] {
+                        batch_x = batch_x.@float().to(device);
+                        batch_y = batch_y.@float();
+                        batch_x_mark = batch_x_mark.@float().to(device);
+                        batch_y_mark = batch_y_mark.@float().to(device);
+                        // decoder input
+                        var dec_inp = zeros(new long[] {
                             batch_y.shape[0],
                             args.pred_len,
                             batch_y.shape[2]
                         }).@float().to(batch_y.device);
-                    dec_inp = cat(new List<Tensor> {
+                        dec_inp = cat(new List<Tensor> {
                             batch_y[TensorIndex.Colon,TensorIndex.Slice(null,args.label_len,null),TensorIndex.Colon],
                             dec_inp
                         }, dim: 1).@float().to(device);
-                    // encoder - decoder
-                    var outputs = model.forward(batch_x);
-                    var pred = outputs.detach().cpu();//.numpy();
-                    preds.append(pred);
+                        // encoder - decoder
+                        var outputs = model.forward(batch_x);
+                        var pred = outputs.detach().cpu();//.numpy();
+                        preds.append(pred);
+                    }
                 }
             }
             var preds2 = cat(preds, 1);
             preds2 = preds2.reshape(-1, preds2.shape[^2], preds2.shape[^1]);
             // result save
             var folder_path = "./results/" + setting + "/";
-            if (!os.path.exists(folder_path))
-            {
+            if (!os.path.exists(folder_path)) {
                 os.makedirs(folder_path);
             }
             //np.save(folder_path + "real_prediction.npy", preds);
@@ -351,8 +337,7 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
         public static void test_params_flop(nn.Module model, (Tensor, Tensor) x_shape)
         {
             long model_params = 0;
-            foreach (var parameter in model.parameters())
-            {
+            foreach (var parameter in model.parameters()) {
                 model_params += parameter.numel();
                 Console.WriteLine("INFO: Trainable parameter count: {:.2f}M".format(model_params / 1000000.0));
             }
@@ -371,12 +356,9 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
         {
             Dictionary<int, double> lr_adjust = null;
             // lr = args.learning_rate * (0.2 ** (epoch // 2))
-            if (args.lradj == "type1")
-            {
+            if (args.lradj == "type1") {
                 lr_adjust = new Dictionary<int, double> { { epoch, args.learning_rate * Math.Pow(0.5, (epoch - 1) / 1) } };
-            }
-            else if (args.lradj == "type2")
-            {
+            } else if (args.lradj == "type2") {
                 lr_adjust = new Dictionary<int, double> {
                     { 2, 5E-05},
                     { 4, 1E-05},
@@ -385,52 +367,35 @@ namespace ToolGood.SoarSky.StockFormer.PatchTSTs.Exps
                     { 10, 5E-07},
                     { 15, 1E-07},
                     { 20, 5E-08}};
-            }
-            else if (args.lradj == "type3")
-            {
+            } else if (args.lradj == "type3") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, epoch < 3 ? args.learning_rate : args.learning_rate * Math.Pow(0.9, (epoch - 3) / 1)}};
-            }
-            else if (args.lradj == "constant")
-            {
+            } else if (args.lradj == "constant") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, args.learning_rate}};
-            }
-            else if (args.lradj == "3")
-            {
+            } else if (args.lradj == "3") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, epoch < 10 ? args.learning_rate : args.learning_rate * 0.1}};
-            }
-            else if (args.lradj == "4")
-            {
+            } else if (args.lradj == "4") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, epoch < 15 ? args.learning_rate : args.learning_rate * 0.1}};
-            }
-            else if (args.lradj == "5")
-            {
+            } else if (args.lradj == "5") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, epoch < 25 ? args.learning_rate : args.learning_rate * 0.1}};
-            }
-            else if (args.lradj == "6")
-            {
+            } else if (args.lradj == "6") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, epoch < 5 ? args.learning_rate : args.learning_rate * 0.1}};
-            }
-            else if (args.lradj == "TST")
-            {
+            } else if (args.lradj == "TST") {
                 lr_adjust = new Dictionary<int, double> {
                     { epoch, scheduler.get_last_lr()[0]}};
             }
-            if (lr_adjust.keys().Contains(epoch))
-            {
+            if (lr_adjust.keys().Contains(epoch)) {
                 var lr = lr_adjust[epoch];
-                foreach (var param_group in optimizer.ParamGroups)
-                {
+                foreach (var param_group in optimizer.ParamGroups) {
                     param_group.LearningRate = lr;
                     //param_group["lr"] = lr;
                 }
-                if (printout)
-                {
+                if (printout) {
                     Console.WriteLine("Updating learning rate to {}".format(lr));
                 }
             }

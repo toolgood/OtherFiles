@@ -61,10 +61,27 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
             this.model.eval();
             var total_loss = new List<double>();
             foreach (var dict in vali_loader) {
-                var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                var (pred, @true) = this._process_one_batch(vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark);
-                var loss = criterion.forward(pred.detach().cpu(), @true.detach().cpu());
-                total_loss.append(loss.item<double>());
+                using (var d = torch.NewDisposeScope()) {
+                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                    batch_x = batch_x.@float().to(this.device);
+                    batch_y = batch_y.@float();
+                    batch_x_mark = batch_x_mark.@float().to(this.device);
+                    batch_y_mark = batch_y_mark.@float().to(this.device);
+                    // decoder input
+                    Tensor dec_inp = null;
+                    if (this.args.padding == 0) {
+                        dec_inp = torch.zeros(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    } else if (this.args.padding == 1) {
+                        dec_inp = torch.ones(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    }
+                    dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
+                    // encoder - decoder
+                    var pred = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
+                    var f_dim = this.args.features == "MS" ? -1 : 0;
+                    var @true = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
+                    var loss = criterion.forward(pred.detach().cpu(), @true.detach().cpu());
+                    total_loss.append(loss.item<double>());
+                }
             }
             var total_loss2 = total_loss.Average();
             model.train();
@@ -93,26 +110,45 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
                 var epoch_time = DateTime.Now;
                 int i = -1;
                 foreach (var dict in train_loader) {
-                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                    i++;
-                    iter_count += 1;
-                    model_optim.zero_grad();
-                    var (pred, @true) = this._process_one_batch(train_data, batch_x, batch_y, batch_x_mark, batch_y_mark);
-                    var loss = criterion.forward(pred, @true);
-                    train_loss.append(loss.item<double>());
-                    if ((i + 1) % 100 == 0) {
-                        Console.WriteLine("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item<double>()));
-                        var speed = (DateTime.Now - time_now) / iter_count;
-                        var left_time = speed * ((this.args.train_epochs - epoch) * train_steps - i);
-                        Console.WriteLine("\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(speed, left_time));
-                        iter_count = 0;
-                        time_now = DateTime.Now;
-                    }
+                    using (var d = torch.NewDisposeScope()) {
 
-                    loss.backward();
-                    model_optim.step();
+                        var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                        i++;
+                        iter_count += 1;
+                        model_optim.zero_grad();
+
+                        batch_x = batch_x.@float().to(this.device);
+                        batch_y = batch_y.@float();
+                        batch_x_mark = batch_x_mark.@float().to(this.device);
+                        batch_y_mark = batch_y_mark.@float().to(this.device);
+                        // decoder input
+                        Tensor dec_inp = null;
+                        if (this.args.padding == 0) {
+                            dec_inp = torch.zeros(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                        } else if (this.args.padding == 1) {
+                            dec_inp = torch.ones(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                        }
+                        dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
+                        // encoder - decoder
+                        var pred = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
+                        var f_dim = this.args.features == "MS" ? -1 : 0;
+                        var @true = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
+
+                        var loss = criterion.forward(pred, @true);
+                        train_loss.append(loss.item<double>());
+                        if ((i + 1) % 100 == 0) {
+                            Console.WriteLine("\titers: {0}, epoch: {1} | loss: {2:7f}".format(i + 1, epoch + 1, loss.item<double>()));
+                            var speed = (DateTime.Now - time_now).TotalSeconds / iter_count;
+                            var left_time = speed * ((this.args.train_epochs - epoch) * train_steps - i);
+                            Console.WriteLine("\tspeed: {:.4f}s/iter; left time: {:.4f}s".format(speed, left_time));
+                            iter_count = 0;
+                            time_now = DateTime.Now;
+                        }
+                        loss.backward();
+                        model_optim.step();
+                    }
                 }
-                Console.WriteLine("Epoch: {} cost time: {}".format(epoch + 1, DateTime.Now - epoch_time));
+                Console.WriteLine("Epoch: {0} cost time: {1}".format(epoch + 1, DateTime.Now - epoch_time));
                 var train_loss2 = train_loss.Average();
                 var vali_loss = this.vali(vali_data, vali_loader, criterion);
                 var test_loss = this.vali(test_data, test_loader, criterion);
@@ -136,10 +172,27 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
             var preds = new List<Tensor>();
             var trues = new List<Tensor>();
             foreach (var dict in test_loader) {
-                var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                var (pred, @true) = this._process_one_batch(test_data, batch_x, batch_y, batch_x_mark, batch_y_mark);
-                preds.append(pred.detach().cpu());
-                trues.append(@true.detach().cpu());
+                using (var d = torch.NewDisposeScope()) {
+                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                    batch_x = batch_x.@float().to(this.device);
+                    batch_y = batch_y.@float();
+                    batch_x_mark = batch_x_mark.@float().to(this.device);
+                    batch_y_mark = batch_y_mark.@float().to(this.device);
+                    // decoder input
+                    Tensor dec_inp = null;
+                    if (this.args.padding == 0) {
+                        dec_inp = torch.zeros(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    } else if (this.args.padding == 1) {
+                        dec_inp = torch.ones(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    }
+                    dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
+                    // encoder - decoder
+                    var pred = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
+                    var f_dim = this.args.features == "MS" ? -1 : 0;
+                    var @true = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
+                    preds.append(pred.detach().cpu());
+                    trues.append(@true.detach().cpu());
+                }
             }
 
             //preds = np.array(preds);
@@ -177,11 +230,26 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
             this.model.eval();
             var preds = new List<Tensor>();
             foreach (var dict in pred_loader) {
-                var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
-                var (pred, @true) = this._process_one_batch(pred_data, batch_x, batch_y, batch_x_mark, batch_y_mark);
-                preds.append(pred.detach().cpu());
+                using (var d = torch.NewDisposeScope()) {
+                    var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                    batch_x = batch_x.@float().to(this.device);
+                    batch_y = batch_y.@float();
+                    batch_x_mark = batch_x_mark.@float().to(this.device);
+                    batch_y_mark = batch_y_mark.@float().to(this.device);
+                    // decoder input
+                    Tensor dec_inp = null;
+                    if (this.args.padding == 0) {
+                        dec_inp = torch.zeros(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    } else if (this.args.padding == 1) {
+                        dec_inp = torch.ones(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
+                    }
+                    dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
+                    // encoder - decoder
+                    var pred = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
+                    preds.append(pred.detach().cpu());
+                }
             }
-          //var  preds2 = np.array(preds);
+            //var  preds2 = np.array(preds);
             //preds = preds.reshape(-1, preds.shape[^2], preds.shape[^1]);
             //// result save
             //var folder_path = "./results/" + setting + "/";
@@ -195,39 +263,23 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Exps
         public virtual (Tensor, Tensor) _process_one_batch(Dataset dataset_object, Tensor batch_x, Tensor batch_y,
                                                            Tensor batch_x_mark, Tensor batch_y_mark)
         {
-            Tensor outputs;
-            Tensor dec_inp = null;
             batch_x = batch_x.@float().to(this.device);
             batch_y = batch_y.@float();
             batch_x_mark = batch_x_mark.@float().to(this.device);
             batch_y_mark = batch_y_mark.@float().to(this.device);
             // decoder input
+            Tensor dec_inp = null;
             if (this.args.padding == 0) {
-                dec_inp = torch.zeros(new long[] {
-                        batch_y.shape[0],
-                        this.args.pred_len,
-                        batch_y.shape[^1]
-                    }).@float();
+                dec_inp = torch.zeros(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
             } else if (this.args.padding == 1) {
-                dec_inp = torch.ones(new long[] {
-                        batch_y.shape[0],
-                        this.args.pred_len,
-                        batch_y.shape[^1]
-                    }).@float();
+                dec_inp = torch.ones(new long[] { batch_y.shape[0], this.args.pred_len, batch_y.shape[^1] }).@float();
             }
             dec_inp = torch.cat(new List<Tensor> { batch_y[TensorIndex.Colon, TensorIndex.Slice(null, this.args.label_len, null), TensorIndex.Colon], dec_inp }, dim: 1).@float().to(this.device);
             // encoder - decoder
-            if (this.args.output_attention) {
-                outputs = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
-            } else {
-                outputs = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
-            }
-            //if (this.args.inverse) {
-            //    outputs = dataset_object.inverse_transform(outputs);
-            //}
+            var pred = this.model.forward(batch_x, batch_x_mark, dec_inp, batch_y_mark).Item1;
             var f_dim = this.args.features == "MS" ? -1 : 0;
-            batch_y = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
-            return (outputs, batch_y);
+            var @true = batch_y[TensorIndex.Colon, -this.args.pred_len, f_dim].to(this.device);
+            return (pred, @true);
         }
         private (Tensor, Tensor, Tensor, Tensor) GetTensor(Dictionary<string, Tensor> dict)
         {

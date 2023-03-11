@@ -8,8 +8,8 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         public static float[] time_features(DateTime date, string freq = "h")
         {
             Dictionary<string, List<string>> features_by_offsets = new Dictionary<string, List<string>> {
-                { "Y",new List<string>(){  } },
                 { "M",new List<string>(){ "MonthOfYear" } },
+                { "A",new List<string>(){ "MonthOfYear" } },
                 { "W",new List<string>(){ "DayOfMonth", "WeekOfYear" } },
                 { "D",new List<string>(){ "DayOfWeek", "DayOfMonth", "DayOfYear" } },
                 { "B",new List<string>(){ "DayOfWeek", "DayOfMonth", "DayOfYear" } },
@@ -30,7 +30,7 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
             return item;
         }
 
-        public static List<float[]> time_features(ICollection<DateTime> dates, string freq = "h")
+        public static List<double[]> time_features(ICollection<DateTime> dates, string freq = "h")
         {
             var supported_freq_msg = @"
     Unsupported frequency {freq_str}
@@ -62,12 +62,12 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 { "L_T",new List<string>(){ "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear" , "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
                 { "L_S",new List<string>(){ "SecondOfMinute", "MinuteOfHour", "HourOfDay", "DayOfWeek", "DayOfMonth", "MonthOfYear", "DayOfYear", "L_DayOfMonth", "L_MonthOfYear", "L_DayOfYear" } },
             };
-            var result = new List<float[]>();
+            var result = new List<double[]>();
             var f = features_by_offsets[freq.ToUpper()];
             foreach (var date in dates) {
-                var item = new float[f.Count];
+                var item = new double[f.Count];
                 for (int i = 0; i < f.Count; i++) {
-                    item[i] = (float)time_features2(date, f[i]);
+                    item[i] = (double)time_features2(date, f[i]);
                 }
                 result.Add(item);
             }
@@ -75,6 +75,27 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         }
         private static ChineseLunisolarCalendar chineseLunisolarCalendar = new ChineseLunisolarCalendar();
 
+
+        public static int time_features_len(string freq = "h")
+        {
+            var freq_map = new Dictionary<string, int> {
+                    { "h", 4},
+                    { "t", 5},
+                    { "s", 6},
+                    { "m", 1},
+                    { "a", 1},
+                    { "w", 2},
+                    { "d", 3},
+                    { "b", 3},
+
+                    { "l_d", 6},
+                    { "l_h", 7},
+                    { "l_t", 8},
+                    { "l_s", 9},
+            };
+            return freq_map[freq.ToLower()];
+        }
+     
         private static double time_features2(DateTime index, string freq)
         {
             int year, month;

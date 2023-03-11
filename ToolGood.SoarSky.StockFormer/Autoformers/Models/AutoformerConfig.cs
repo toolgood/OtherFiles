@@ -50,7 +50,7 @@
         ///输出大小（默认为 7）
         ///Output size (defaults to 7)
         /// </summary>
-        public int c_out { get; set; } = 2;
+        public int c_out { get; set; } = 7;
 
         /// <summary>
         ///模型尺寸（默认为 512）

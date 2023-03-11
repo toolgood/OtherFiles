@@ -32,22 +32,16 @@ namespace ToolGood.SoarSky.StockFormer.Utils
         public virtual void @__call__(double val_loss, nn.Module model, string path)
         {
             var score = -val_loss;
-            if (best_score is null)
-            {
+            if (best_score is null) {
                 best_score = score;
                 save_checkpoint(val_loss, model, path);
-            }
-            else if (score < best_score + delta)
-            {
+            } else if (score < best_score + delta) {
                 counter += 1;
                 Console.WriteLine($"EarlyStopping counter: {counter} out of {patience}");
-                if (counter >= patience)
-                {
+                if (counter >= patience) {
                     early_stop = true;
                 }
-            }
-            else
-            {
+            } else {
                 best_score = score;
                 save_checkpoint(val_loss, model, path);
                 counter = 0;
@@ -56,11 +50,10 @@ namespace ToolGood.SoarSky.StockFormer.Utils
 
         public virtual void save_checkpoint(double val_loss, nn.Module model, string path)
         {
-            if (verbose)
-            {
-                Console.WriteLine($"Validation loss decreased ({val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...");
+            if (verbose) {
+                Console.WriteLine($"Validation loss decreased ({val_loss_min} --> {val_loss}).  Saving model ...");
             }
-            model.save(path + "/" + "best");
+            model.save(path + "/" + "checkpoint.pth");
             //model.mySave(path + "/" + "best");
             val_loss_min = val_loss;
         }

@@ -10,9 +10,9 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
     public class Dataset_ETT_minute : Dataset
     {
         public string data_path;
-        public List<float[]> data_stamp;
-        public List<float[]> data_x;
-        public List<float[]> data_y;
+        public List<double[]> data_stamp;
+        public List<double[]> data_x;
+        public List<double[]> data_y;
         public string features;
         public string freq;
         public int label_len;
@@ -85,16 +85,16 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 //if (this.scale) {
                 //    records = records.Skip(border1s[0]).Take(border2s[0]- border1s[0]).ToList();
                 //}  
-                List<float[]> data = new List<float[]>();
+                List<double[]> data = new List<double[]>();
                 foreach (var item in records) {
-                    float[] datas = new float[7];
-                    datas[0] = (float)item.HUFL;
-                    datas[1] = (float)item.HULL;
-                    datas[2] = (float)item.MUFL;
-                    datas[3] = (float)item.MULL;
-                    datas[4] = (float)item.LUFL;
-                    datas[5] = (float)item.LULL;
-                    datas[6] = (float)item.OT;
+                    double[] datas = new double[7];
+                    datas[0] = (double)item.HUFL;
+                    datas[1] = (double)item.HULL;
+                    datas[2] = (double)item.MUFL;
+                    datas[3] = (double)item.MULL;
+                    datas[4] = (double)item.LUFL;
+                    datas[5] = (double)item.LULL;
+                    datas[6] = (double)item.OT;
                     data.Add(datas);
                 }
                 this.data_x = data;
@@ -139,21 +139,36 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
             };
         }
 
-        public Tensor GetTensor(List<float[]> floats, int begin, int end)
+        public Tensor GetTensor(List<double[]> floats, int begin, int end)
         {
-            List<Tensor> list = new List<Tensor>();
-            for (int i = begin; i < end; i++) {
-                list.Add(torch.tensor(floats[i]));
-            }
-            return torch.cat(list, 0);
-        }
-        public Tensor GetTensor(List<float[]> floats, long begin, long end)
-        {
-            List<Tensor> list = new List<Tensor>();
+            double[,] list = new double[end - begin + 1, floats[0].Length];
             for (int i = (int)begin; i < (int)end; i++) {
-                list.Add(torch.tensor(floats[i]));
+                for (int j = 0; j < floats[0].Length; j++) {
+                    list[i, j] = floats[i][j];
+                }
             }
-            return torch.cat(list, 0).reshape(new long[] { end - begin, floats[0].Length });
+            return torch.tensor(list);
+
+            //List<Tensor> list = new List<Tensor>();
+            //for (int i = begin; i < end; i++) {
+            //    list.Add(torch.tensor(floats[i]));
+            //}
+            //return torch.cat(list,0);
+        }
+        public Tensor GetTensor(List<double[]> floats, long begin, long end)
+        {
+            double[,] list = new double[end - begin + 1, floats[0].Length];
+            for (int i = (int)begin; i < (int)end; i++) {
+                for (int j = 0; j < floats[0].Length; j++) {
+                    list[i, j] = floats[i][j];
+                }
+            }
+            return torch.tensor(list);
+            //List<Tensor> list = new List<Tensor>();
+            //for (int i = (int)begin; i < (int)end; i++) {
+            //    list.Add(torch.tensor(floats[i]));
+            //}
+            //return torch.cat(list,0).reshape(new long[] { end - begin, floats[0].Length });
         }
 
     }
