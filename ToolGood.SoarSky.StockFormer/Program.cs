@@ -1,4 +1,6 @@
-﻿namespace ToolGood.SoarSky.StockFormer
+﻿using TorchSharp;
+
+namespace ToolGood.SoarSky.StockFormer
 {
     internal class Program
     {
@@ -18,6 +20,8 @@
         }
         public static void Autoformer()
         {
+            torch.manual_seed(2021);
+
             //--is_training 1   --root_path ./dataset/ETT-small/   --data_path ETTh1.csv   --model_id ETTh1_96_24   --model Autoformer
             //--data ETTh1   --features M   --seq_len 96   --label_len 48   --pred_len 24   --e_layers 2   --d_layers 1   --factor 3
             //--enc_in 7   --dec_in 7   --c_out 7   --des 'Exp'   --itr 1
@@ -107,7 +111,7 @@
             var exp = new ToolGood.SoarSky.StockFormer.Informers.Exps.Exp_Main(expConfig);
             var model = exp._build_model();
             model.save("Informer.pth");
-            //   exp.train(exp.ToString());
+            exp.train(exp.ToString());
         }
 
         public static void PatchTST()

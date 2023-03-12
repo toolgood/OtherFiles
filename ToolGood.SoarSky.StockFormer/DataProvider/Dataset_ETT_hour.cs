@@ -88,7 +88,6 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 var item2 = standardScaler.transform(records[0]);
                 // array([-0.36312285, -0.0057598, -0.63071223, -0.14752332, 1.38857471,        0.87514257, 1.46055158])
 
-
                 List<double[]> data = new List<double[]>();
                 for (int i = border1; i < border2; i++) {
                     var item = standardScaler.transform(records[i]);

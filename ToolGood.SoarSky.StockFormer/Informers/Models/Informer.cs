@@ -84,9 +84,9 @@ namespace ToolGood.SoarSky.StockFormer.Informers.Models
             // dec_out = this.end_conv1.forward(dec_out)
             // dec_out = this.end_conv2.forward(dec_out.transpose(2,1)).transpose(1,2)
             if (this.output_attention) {
-                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], attns);
+                return (dec_out[TensorIndex.Colon, TensorIndex.Slice(-this.pred_len), TensorIndex.Colon], attns);
             } else {
-                return (dec_out[TensorIndex.Colon, -this.pred_len, TensorIndex.Colon], null);
+                return (dec_out[TensorIndex.Colon, TensorIndex.Slice(-this.pred_len), TensorIndex.Colon], null);
             }
         }
     }

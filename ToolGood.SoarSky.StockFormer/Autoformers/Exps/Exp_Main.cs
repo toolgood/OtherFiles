@@ -62,6 +62,7 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Exps
                 foreach (var dict in vali_loader) {
                     using (var d = torch.NewDisposeScope()) {
                         var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                        if (batch_x.size(0) != this.args.batch_size) continue;
 
                         batch_x = batch_x.@float().to(this.device);
                         batch_y = batch_y.@float().to(this.device);
@@ -109,6 +110,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Exps
                 foreach (var dict in train_loader) {
                     using (var d = torch.NewDisposeScope()) {
                         var (batch_x, batch_y, batch_x_mark, batch_y_mark) = GetTensor(dict);
+                        if (batch_x.size(0) != this.args.batch_size) continue;
+
                         i++;
                         iter_count += 1;
                         model_optim.zero_grad();
