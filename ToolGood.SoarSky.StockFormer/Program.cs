@@ -39,6 +39,7 @@ namespace ToolGood.SoarSky.StockFormer
             expConfig.enc_in = 7;
             expConfig.dec_in = 7;
             expConfig.c_out = 7;
+           // expConfig.batch_size = 2;
 
             var exp = new ToolGood.SoarSky.StockFormer.Autoformers.Exps.Exp_Main(expConfig);
             var model = exp._build_model();

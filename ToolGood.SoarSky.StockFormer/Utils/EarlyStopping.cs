@@ -22,10 +22,10 @@ namespace ToolGood.SoarSky.StockFormer.Utils
         {
             this.patience = patience;
             this.verbose = verbose;
-            counter = 0;
-            best_score = null;
-            early_stop = false;
-            val_loss_min = np.Inf;
+            this.counter = 0;
+            this.best_score = null;
+            this.early_stop = false;
+            this.val_loss_min = np.Inf;
             this.delta = delta;
         }
 
@@ -54,8 +54,7 @@ namespace ToolGood.SoarSky.StockFormer.Utils
                 Console.WriteLine($"Validation loss decreased ({val_loss_min} --> {val_loss}).  Saving model ...");
             }
             model.save(path + "/" + "checkpoint.pth");
-            //model.mySave(path + "/" + "best");
-            val_loss_min = val_loss;
+            this.val_loss_min = val_loss;
         }
     }
 

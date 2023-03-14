@@ -4,6 +4,7 @@ using ToolGood.SoarSky.StockFormer.DataProvider;
 using ToolGood.SoarSky.StockFormer.Utils;
 using TorchSharp;
 using TorchSharp.Modules;
+using static Tensorboard.CostGraphDef.Types;
 using static TorchSharp.torch;
 using static TorchSharp.torch.optim;
 using static TorchSharp.torch.utils.data;
@@ -37,7 +38,7 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Exps
 
         public virtual OptimizerHelper _select_optimizer()
         {
-            var model_optim = optim.Adam(model.parameters(), lr: args.learning_rate);
+            var model_optim = optim.Adam(model.parameters(), lr: args.learning_rate, beta2: 0.999);
             return model_optim;
         }
         public virtual Loss<Tensor, Tensor, Tensor> _select_criterion()

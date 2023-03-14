@@ -13,7 +13,6 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
     //     
     public class AutoCorrelation : nn.Module
     {
-        public bool training;
         public Dropout dropout;
         public double factor;
         public bool mask_flag;
@@ -50,14 +49,14 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             var mean_value = torch.mean(torch.mean(corr, dimensions: new long[] { 1 }), dimensions: new long[] { 1 });
             var index = torch.topk(torch.mean(mean_value, dimensions: new long[] { 0 }), top_k, dim: -1).indices;
             var weights = torch.stack((from i in Enumerable.Range(0, top_k)
-                                       select mean_value[TensorIndex.Colon, index[i]]).ToList(), dim: -1);
+                                       select mean_value[TensorIndex.Colon, TensorIndex.Tensor(index[i])]).ToList(), dim: -1);
             // update corr
             var tmp_corr = torch.softmax(weights, dim: -1);
             // aggregation
             var tmp_values = values;
             var delays_agg = torch.zeros_like(values).@float();
             foreach (var i in Enumerable.Range(0, top_k)) {
-                var pattern = torch.roll(tmp_values, -Convert.ToInt32(index[i]), -1);
+                var pattern = torch.roll(tmp_values, -(int)(index[i]), -1);
                 delays_agg = delays_agg + pattern * tmp_corr[TensorIndex.Colon, i].unsqueeze(1).unsqueeze(1).unsqueeze(1).repeat(1, head, channel, length);
             }
             return delays_agg;
@@ -92,32 +91,32 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             return delays_agg;
         }
 
-        // 
-        //         Standard version of Autocorrelation
-        //         
-        public virtual Tensor time_delay_agg_full(Tensor values, Tensor corr)
-        {
-            var batch = values.shape[0];
-            var head = values.shape[1];
-            var channel = values.shape[2];
-            var length = values.shape[3];
-            // index init
-            var init_index = torch.arange(length).unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch, head, channel, 1).to(values.device);
-            // find top k
-            var top_k = Convert.ToInt32(this.factor * Math.Log(length));
-            var (weights, delay) = torch.topk(corr, top_k, dim: -1);
-            // update corr
-            var tmp_corr = torch.softmax(weights, dim: -1);
-            // aggregation
-            var tmp_values = values.repeat(1, 1, 1, 2);
-            var delays_agg = torch.zeros_like(values).@float();
-            foreach (var i in Enumerable.Range(0, top_k)) {
-                var tmp_delay = init_index + delay[default, i].unsqueeze(-1);
-                var pattern = torch.gather(tmp_values, dim: -1, index: tmp_delay);
-                delays_agg = delays_agg + pattern * tmp_corr[default, i].unsqueeze(-1);
-            }
-            return delays_agg;
-        }
+        //// 
+        ////         Standard version of Autocorrelation
+        ////         
+        //public virtual Tensor time_delay_agg_full(Tensor values, Tensor corr)
+        //{
+        //    var batch = values.shape[0];
+        //    var head = values.shape[1];
+        //    var channel = values.shape[2];
+        //    var length = values.shape[3];
+        //    // index init
+        //    var init_index = torch.arange(length).unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch, head, channel, 1).to(values.device);
+        //    // find top k
+        //    var top_k = Convert.ToInt32(this.factor * Math.Log(length));
+        //    var (weights, delay) = torch.topk(corr, top_k, dim: -1);
+        //    // update corr
+        //    var tmp_corr = torch.softmax(weights, dim: -1);
+        //    // aggregation
+        //    var tmp_values = values.repeat(1, 1, 1, 2);
+        //    var delays_agg = torch.zeros_like(values).@float();
+        //    foreach (var i in Enumerable.Range(0, top_k)) {
+        //        var tmp_delay = init_index + delay[default, i].unsqueeze(-1);
+        //        var pattern = torch.gather(tmp_values, dim: -1, index: tmp_delay);
+        //        delays_agg = delays_agg + pattern * tmp_corr[default, i].unsqueeze(-1);
+        //    }
+        //    return delays_agg;
+        //}
 
         public virtual (Tensor, Tensor) forward(Tensor queries, Tensor keys, Tensor values, IMasking attn_mask)
         {
