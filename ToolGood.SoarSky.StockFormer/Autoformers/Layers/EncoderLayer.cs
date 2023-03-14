@@ -34,6 +34,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.decomp2 = new series_decomp(moving_avg);
             this.dropout = nn.Dropout(dropout);
             this.activation = activation == "relu" ? nn.ReLU() : nn.GELU();//F.relu : F.gelu;
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, Tensor) forward(Tensor x, IMasking attn_mask = null)

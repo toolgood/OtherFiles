@@ -19,6 +19,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.layers = nn.ModuleList(layers);
             this.norm = norm_layer;
             this.projection = projection;
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, Tensor) forward(

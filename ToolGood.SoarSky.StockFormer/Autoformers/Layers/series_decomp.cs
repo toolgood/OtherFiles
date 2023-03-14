@@ -12,6 +12,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
         public series_decomp(int kernel_size) : base("series_decomp")
         {
             this.moving_avg = new moving_avg(kernel_size, stride: 1);
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, Tensor) forward(Tensor x)

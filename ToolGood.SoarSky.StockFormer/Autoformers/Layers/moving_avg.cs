@@ -16,6 +16,7 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
         {
             this.kernel_size = kernel_size;
             this.avg = nn.AvgPool1d(kernelSize: kernel_size, stride: stride, padding: 0);
+            this.RegisterComponents();
         }
 
         public virtual Tensor forward(Tensor x)

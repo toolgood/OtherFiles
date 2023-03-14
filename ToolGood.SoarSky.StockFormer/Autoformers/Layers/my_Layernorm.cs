@@ -11,6 +11,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
         public my_Layernorm(int channels) : base("my_Layernorm")
         {
             this.layernorm = nn.LayerNorm(channels);
+            this.RegisterComponents();
+
         }
 
         public virtual Tensor forward(Tensor x)

@@ -42,6 +42,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.dropout = nn.Dropout(dropout);
             this.projection = nn.Conv1d(inputChannel: d_model, outputChannel: c_out, kernelSize: 3, stride: 1, padding: 1, paddingMode: TorchSharp.PaddingModes.Circular, bias: false);
             this.activation = activation == "relu" ? nn.ReLU() : nn.GELU();//F.relu : F.gelu;
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, Tensor) forward(Tensor x, Tensor cross, IMasking x_mask = null, IMasking cross_mask = null)

@@ -32,6 +32,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.mask_flag = mask_flag;
             this.output_attention = output_attention;
             this.dropout = nn.Dropout(attention_dropout);
+            this.RegisterComponents();
+
         }
 
         // 

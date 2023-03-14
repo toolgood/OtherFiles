@@ -30,6 +30,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.value_projection = nn.Linear(d_model, d_values.Value * n_heads);
             this.out_projection = nn.Linear(d_values.Value * n_heads, d_model);
             this.n_heads = n_heads;
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, Tensor) forward(Tensor queries, Tensor keys, Tensor values, IMasking attn_mask)

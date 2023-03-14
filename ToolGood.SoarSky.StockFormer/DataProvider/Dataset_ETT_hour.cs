@@ -103,6 +103,26 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                     data.Add(datas);
                 }
 
+                //// test StandardScaler2 data 
+                //List<string> dateStr = new List<string>();
+                //for (int i = 0; i < records.Count; i++) {
+                //    var item = standardScaler.transform(records[i]);
+                //    var datas = new string[7];
+                //    datas[0] = item.HUFL.ToString("0.00000000").TrimEnd('0');
+                //    datas[1] = item.HULL.ToString("0.00000000").TrimEnd('0');
+                //    datas[2] = item.MUFL.ToString("0.00000000").TrimEnd('0');
+                //    datas[3] = item.MULL.ToString("0.00000000").TrimEnd('0');
+                //    datas[4] = item.LUFL.ToString("0.00000000").TrimEnd('0');
+                //    datas[5] = item.LULL.ToString("0.00000000").TrimEnd('0');
+                //    datas[6] = item.OT.ToString("0.00000000").TrimEnd('0');
+
+                //    var str = string.Join(" ", datas);
+                //    dateStr.Add(str);
+                //}
+                //File.WriteAllText("ETTh1.txt", string.Join("\r\n", dateStr));
+                ////  Through comparison, it is found that the data of python is the same as that here 
+                ////  look Datasets\ETT-small\ETTh1.txt   Datasets\ETT-small\ETTh1-python.txt
+
                 this.data_x = data;
                 this.data_y = data;
 
@@ -117,7 +137,8 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         private int size;
 
         public override long Count {
-            get {
+            get
+            {
                 return this.size - this.seq_len - this.pred_len + 1;
             }
         }
@@ -183,7 +204,7 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
                 foreach (var num in nums) {
                     sum += (num - mean) * (num - mean);
                 }
-                var std = Math.Sqrt(sum / (nums.Length - 1));
+                var std = Math.Sqrt(sum / (nums.Length));
                 return (mean, std);
             }
 
@@ -229,7 +250,6 @@ namespace ToolGood.SoarSky.StockFormer.DataProvider
         }
 
     }
-
 
 
 

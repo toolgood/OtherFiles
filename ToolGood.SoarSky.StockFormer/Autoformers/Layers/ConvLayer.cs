@@ -17,6 +17,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.norm = nn.BatchNorm1d(c_in);
             this.activation = nn.ELU();
             this.maxPool = nn.MaxPool1d(kernelSize: 3, stride: 2, padding: 1);
+            this.RegisterComponents();
+
         }
 
         public virtual Tensor forward(Tensor x)

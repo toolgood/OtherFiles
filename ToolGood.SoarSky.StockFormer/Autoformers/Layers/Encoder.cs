@@ -20,6 +20,8 @@ namespace ToolGood.SoarSky.StockFormer.Autoformers.Layers
             this.attn_layers = nn.ModuleList(attn_layers);
             this.conv_layers = conv_layers is not null ? nn.ModuleList(conv_layers) : null;
             this.norm = norm_layer;
+            this.RegisterComponents();
+
         }
 
         public virtual (Tensor, List<Tensor>) forward(Tensor x, IMasking attn_mask = null)

@@ -15,7 +15,6 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NumpyDotNet" Version="0.9.83.6" />
         <PackageReference Include="TorchSharp" Version="0.99.3" />
-        <PackageReference Include="TorchSharp-cuda-windows" Version="0.99.3" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Debug'">
@@ -26,6 +25,10 @@
         <PackageReference Include="TorchSharp-cpu" Version="0.99.3" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(Configuration)'=='CUDA'">
+        <PackageReference Include="TorchSharp-cuda-windows" Version="0.99.3" />
+    </ItemGroup>
+    
 
     <ItemGroup>
         <None Update="Datasets\ETT-small\ETTh1.csv">
